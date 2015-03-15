@@ -1,0 +1,133 @@
+html, body{
+  margin: 0;
+  padding: 0;
+  font-family: 'Open Sans', sans-serif;
+}
+
+h1{
+  color: #1F7A99;
+  text-shadow: 0px 1px 0px #7EDFFF;
+  margin-top: 0;
+  font-size: 6em;
+  margin-bottom: 5px;
+}
+
+#searchFor{
+  font-size: 20px;
+  color: #ffffff;
+  opacity: .85;
+}
+
+.gm-style-iw {
+  width: content;
+  min-height: 50px;
+}
+
+#top-section{
+  background-color: #33CCFF;
+  height: 100vh;
+  text-align: center;
+}
+
+#top-content{
+  position: relative;
+  top: 30%;
+}
+
+#search{
+  width: 100px;
+  height: 20px;
+  margin-left: 10px;
+  background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #eae0c2), color-stop(1, #ccc2a6));
+  background:-moz-linear-gradient(top, #eae0c2 5%, #ccc2a6 100%);
+  background:-webkit-linear-gradient(top, #eae0c2 5%, #ccc2a6 100%);
+  background:-o-linear-gradient(top, #eae0c2 5%, #ccc2a6 100%);
+  background:-ms-linear-gradient(top, #eae0c2 5%, #ccc2a6 100%);
+  background:linear-gradient(to bottom, #eae0c2 5%, #ccc2a6 100%);
+  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#eae0c2', endColorstr='#ccc2a6',GradientType=0);
+  background-color:#eae0c2;
+  border:none;
+  display:inline-block;
+  cursor:pointer;
+  color:#505739;
+  font-family:arial;
+  font-weight:bold;
+  text-decoration:none;
+  text-shadow:0px 1px 0px #ffffff;
+}
+#search:hover {
+  background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #ccc2a6), color-stop(1, #eae0c2));
+  background:-moz-linear-gradient(top, #ccc2a6 5%, #eae0c2 100%);
+  background:-webkit-linear-gradient(top, #ccc2a6 5%, #eae0c2 100%);
+  background:-o-linear-gradient(top, #ccc2a6 5%, #eae0c2 100%);
+  background:-ms-linear-gradient(top, #ccc2a6 5%, #eae0c2 100%);
+  background:linear-gradient(to bottom, #ccc2a6 5%, #eae0c2 100%);
+  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ccc2a6', endColorstr='#eae0c2',GradientType=0);
+  background-color:#ccc2a6;
+}
+#search:active {
+  position:relative;
+  top:1px;
+}
+
+#companies{
+  margin-right: 50px;
+  cursor: pointer;
+}
+
+#jobs{
+  cursor: pointer;
+}
+
+#companies:hover{
+  opacity: .5;
+}
+
+#jobs:hover{
+  opacity: .5;
+}
+
+#states{
+  margin-right: 50px;
+}
+
+.responseContent{
+  background-color: white;
+  margin-left: auto;
+  margin-right: auto;
+  width: 70%;
+  box-sizing: border-box;
+}
+
+#map-div{
+  margin-top: 50px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 500px;
+  height: 300px;
+  border: 1px solid black;
+}
+
+#companyName{
+  font-size:2em;
+  color: #33CCFF;
+}
+
+#image{
+  box-sizing: border-box;
+  width: 80px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sidebar{
+  box-sizing: border-box;
+  width: 30%;
+  float: left;
+}
+
+#searchAgain{
+  text-align: center;
+  clear: both;
+  margin-top: 20px;
+}

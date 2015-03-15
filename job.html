@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta name = "viewport" content = "width=device-width, initial-scale=1">
+	<meta charset="utf-8" />
+	<link href='css/style.css' rel='stylesheet' type='text/css'>
+
+	<link href='http://fonts.googleapis.com/css?family=Cuprum' rel='stylesheet' type='text/css'>
+	<link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+
+	<title>Job Storm</title>
+
+	<script>
+	"use strict";
+	(function(){
+		var GLASSDOOR_URL = "http://api.glassdoor.com/api/api.htm?callback=?&userip=0.0.0.0&useragent=&format=json&v=1&action=";
+		var GLASSDOOR_TP = 27139;
+		var GLASSDOOR_TK = "jyJCP7s0e8G";
+
+		var RETURN_KEY = 13;
+
+		window.onload = init;
+
+		var map;
+		var infowindow;
+		var markers = [];
+
+		var company = false;
+		var jobs = false;
+
+		function init(){
+			//setting up google maps
+			var mapOptions = {
+				center: { lat: 39.828127, lng: -98.579404},
+				zoom: 3
+			};
+
+			map = new google.maps.Map(document.getElementById('map-div'), mapOptions);
+
+			var sSelect = document.querySelector("#states"); //gathering states
+			var cSelect = document.querySelector("#categories"); //gathering categories
+
+			//set up the ui
+			$("#spinner").hide();
+			$("#responseContent").hide();
+			$("#map-div").hide();
+			$("#jobControls").hide();
+			$("#loading").hide();
+			$("#error").hide();
+			$("#companyControls").hide();
+			$("#searchAgain").hide();
+
+			$("#jobs").click(function(){
+				$("#menu").slideUp(600);
+				$("#jobControls").slideDown(600);
+				$("#loading").fadeIn(2000);
+				$("#searchterm").val("");
+				for(var i = 0; i < states.length; i++){
+					sSelect.options[sSelect.options.length] = new Option(states[i].name);
+				}
+
+				for(var n = 0; n < categories.length; n++){
+					cSelect.options[cSelect.options.length] = new Option(categories[n].shortName, categories[n].id);
+				}
+
+				jobs = true;
+				company = false;
+			});
+
+			$("#companies").click(function(){
+				google.maps.event.trigger(map, "resize");
+				sSelect.options.length = 0;
+				cSelect.options.length = 0;
+				$("#menu").slideUp(600);
+				$("#map-div").hide();
+				$("#companyControls").slideDown(600);
+				$("#loading").fadeIn(2000);
+				company = true;
+				jobs = false;
+			});
+
+			$("#searchAgain").click(function(){
+				$("#top-section").fadeIn(1000);
+				$("#map-div").fadeOut(100);
+				$("#menu").show();
+				$("#spinner").hide();
+				$("#responseContent").hide();
+				$("#jobControls").hide();
+				$("#loading").hide();
+				$("#error").hide();
+				$("#companyControls").hide();
+			});
+
+
+			document.querySelector("#searchJobs").onclick = doSearchForEvent;
+			document.querySelector("#searchCompany").onclick = doSearchForEvent;
+			document.querySelector("#searchterm").onkeyup = doKeyup;
+			document.querySelector("#searchText").innerHTML = "Enter a Company";
+
+		}
+
+		//add google maps marker
+		function addMarker(latitude, longitude, title){
+			var position = {lat: latitude, lng: longitude};
+			var marker = new google.maps.Marker({position: position, map: map});
+			marker.title = title;
+
+			google.maps.event.addListener(marker, 'click', function(e) {
+				makeInfoWindow(this.position, this.title);
+			});
+			markers.push(marker);
+		}
+
+		//add google maps zoom
+		function zoomOnFirstResult(){
+			if(markers.length == 0){
+				return;
+			}
+			else{
+				map.setZoom(3);
+				map.setCenter(markers[0].position);
+			}
+		}
+
+		//clear google maps markers
+		function clearMarkers(){
+			if(infowindow) {
+				infowindow.close();
+			}
+
+			for(var i = 0; i < markers.length; i++){
+				markers[i].setMap(null);
+			}
+
+			markers = [];
+		}
+
+	    //make google maps info window
+	    function makeInfoWindow(position, msg){
+	        //close old infoWindow if it exist
+	        if(infowindow) {
+	        	infowindow.close();
+	        }
+
+	        //make a new infowindow
+	        infowindow = new google.maps.InfoWindow({
+	        	map: map,
+	        	position: position,
+	        	maxWidth: "1000px",
+	        	content: "<b>" + msg + "</b>"
+	        });
+	    }
+
+	    //gather location from in the browser using geolocation
+	    function getLocation() {
+	    	if (navigator.geolocation) {
+	    		navigator.geolocation.getCurrentPosition(addPosition);
+	    	} else {
+	    		document.querySelector("#error").innerHTML = "Geolocation is not supported by this browser.";
+	    	}
+	    }
+
+	    //takes in the geolocation position and gives coordinates
+	    function addPosition(position) {
+	    	addMarker(position.coords.latitude, position.coords.longitude, "You Are Here");
+	    }
+
+	    //allows functionality for the enter key
+	    function doKeyup(e){
+	    	if(e.keyCode == RETURN_KEY){
+	    		doSearchForEvent();
+	    	}
+	    }
+
+	    //beigin search for for JSON data
+	    function doSearchForEvent(){
+	    	//gather values and html elements
+	    	var cSelect = document.querySelector("#categories");
+	    	var companyValue = document.querySelector("#searchterm").value;
+	    	var categoryValue = document.querySelector("#categories").value;
+
+	    	//call the google maps clear markers
+	    	clearMarkers();
+
+	    	//set up the url to go to
+	    	var url = GLASSDOOR_URL; //company and job stat data
+	    	var url2 = GLASSDOOR_URL; //job progressions data (still in test)
+	    	url2 += "jobs-prog";
+	    	url2 += "&t.p=" + GLASSDOOR_TP + "&t.k=" + GLASSDOOR_TK;
+
+	    	//if searching for jobs execute this url
+	    	if(jobs == true){
+	    		url += "jobs-stats";
+	    		url += "&t.p=" + GLASSDOOR_TP + "&t.k=" + GLASSDOOR_TK;
+	    		url += "&returnStates=true";
+	    		url += "&jc=";
+	    		url2 += "&jobTitle=";
+	    	}
+
+	    	//if searching for company execute this url
+	    	if(company == true){
+	    		if(companyValue.length < 1){
+	    			$("#loading").hide();
+	    			$("#error").fadeIn(200);
+	    			document.querySelector("#error").innerHTML = "<b>Please Enter A Company</b>"
+	    			return;
+	    		}
+
+	    		//add final url elements
+	    		url += "employers";
+	    		url += "&t.p=" + GLASSDOOR_TP + "&t.k=" + GLASSDOOR_TK;
+	    		url += "&q=";
+	    	}
+
+	    	if(cSelect.options.length > 0){
+	    		var jobValue = cSelect.options[cSelect.options.selectedIndex].text;
+	    		jobValue = encodeURI(jobValue);
+	    		url2 += jobValue;
+	    	}
+
+			// get rid of any leading and trailing spaces
+			companyValue = companyValue.trim();
+
+			companyValue = encodeURI(companyValue);
+			categoryValue = encodeURI(categoryValue);
+
+			url += categoryValue;
+			url += companyValue;
+
+			//add the loading spinner
+			$("#spinner").fadeIn(1000);
+			// call the web service, and download the file
+
+			$.getJSON(url).done(function(data){
+				eventJsonLoaded(data);
+			});
+			$.getJSON(url2).done(function(data){
+				eventJsonLoaded(data);
+			});
+		}
+
+		function runEffects(){
+				//run the ui effects and smooth transitions
+				$("#top-section").slideUp(1200);
+				$("#spinner").fadeOut(600);
+				$("#responseContent").slideDown(1200);
+				$("#searchAgain").show();
+				//allow for google maps to be hidden and resized
+				google.maps.event.trigger(map, "resize");
+			}
+
+			//loaded json
+			function eventJsonLoaded(obj){
+				var bigString = "";
+				var sSelect = document.querySelector("#states");
+				if(sSelect.options.length > 0){
+				var state = sSelect.options[sSelect.selectedIndex].value;
+			}
+			//cancel code if error hitting the url
+			if(obj.error){
+				var message = obj.message;
+				document.querySelector("#error").innerHTML = "<b>Error: " + message + "</b>";
+				$("#dynamicContent").fadeIn(1000);
+				return;
+			}
+
+			//cancel code if number of employers returned = 0
+			if(obj.response.employers == 0){
+				$("#loading").hide();
+				$("#error").fadeIn(200);
+				document.querySelector("#error").innerHTML = "<b>No Companies Match That Name</b>";
+				return;
+			}
+
+			//if there are employers parse the data
+			if(obj.response.employers != null){
+				var employers = obj.response.employers;
+				runEffects();
+				//gather the first employer from the list
+				for (var i=0;i<1;i++){
+					var company = employers[i];
+					var name = company.name;
+					var logo = company.squareLogo;
+					var industry = company.industry;
+					var site = company.website;
+					var overallRating = company.overallRating;
+					var cultureRating = company.cultureAndValuesRating;
+					var seniorRating = company.seniorLeadershipRating;
+					var compensationRating = company.compensationAndBenefitsRating;
+					var careerRating = company.careerOpportunitiesRating;
+					var workLifeRating = company.workLifeBalanceRating;
+					var jobTitleReview = company.featuredReview.jobTitle;
+					var locationReview = company.featuredReview.location;
+					var headlineReview = company.featuredReview.headline;
+					var proReview = company.featuredReview.pros;
+					var conReview = company.featuredReview.cons;
+
+				//parse the data and display html
+				var line = "<div class='employers'>";
+				line += "<p><strong id='companyName'>" + name + " </strong><small>( " + industry + " )</small></p>";
+				line += "<div class='sidebar'>";
+				if(logo){
+					line += "<img id = 'image' src='" + logo + "' />";
+				}
+				line += "<h3>Ratings</h3>";
+				line += "<p><strong>Overall:</strong> " + overallRating + "</p>";
+				line += "<p><strong>Culture and Values:</strong> " + cultureRating + "</p>";
+				line += "<p><strong>Senior Leadership:</strong> " + seniorRating +"</p>";
+				line += "<p><strong>Compensation and Benefits:</strong> " + compensationRating +"</p>";
+				line += "<p><strong>Career Opportunities:</strong> "+ careerRating +"</p>";
+				line += "<p><strong>Work Life Balance:</strong> " + workLifeRating +"</p>";
+				line += "<p></p>";
+				line += "</div>";
+				line += "<div class='responseText'>"
+				line += "<h3>Featured Review from a " + jobTitleReview +" located in " + locationReview +"</h3>";
+				line += "<p><i>'"+ headlineReview +"'</i></p>";
+				line += "<p><strong>Pros:</strong><small> " + proReview +"</small></p>";
+				line += "<p><strong>Cons:</strong><small> " + conReview +"</small></p>";
+				line += "</div>";
+				line += "</div>";
+
+				bigString += line;
+
+			}
+
+		}
+
+			//if there are states then run
+			if(obj.response.states != null){
+				//display the map
+				$("#map-div").show();
+				runEffects();
+				getLocation();
+				var states = obj.response.states;
+				var cSelect = document.querySelector("#categories");
+
+				if(states[state]){
+					var numJobs = states[state].numJobs;
+					var name = states[state].name;
+
+					var lat = Number(states[state].latitude);
+					var lng = Number(states[state].longitude);
+
+					if(lat && lng){
+						addMarker(lat, lng, "<strong>" + name + "</strong><br/>" + "Jobs: " +numJobs);
+						zoomOnFirstResult();
+					}
+				}
+				else{
+					document.querySelector("#error").innerHTML = "<b>Error</b>";
+				}
+			}
+			//display the html content
+			document.querySelector("#dynamicContent").innerHTML = bigString;
+
+		}
+
+	}());
+
+
+</script>
+
+
+</head>
+<body>
+	<div id = "top-section">
+		<div id = "top-content">
+			<h1>Welcome.</h1>
+			<div id = "menu">
+				<small id = "searchFor">What would you like to search for?</small>
+
+				<p><span id = "companies">Companies</span>
+					<span id = "jobs">Jobs</span></p>
+				</div>
+
+				<div id = "companyControls">
+					<span id = "searchText">Search Company</span> <input id="searchterm" type="text" size="20" maxlength="20" autofocus /> <button type="button" id="searchCompany">Search</button>
+				</div>
+
+				<div id = "jobControls">
+					<label>Search State:</label>
+					<select id="states">
+					</select>
+					<label>Job Categories:</label>
+					<select id="categories">
+					</select>
+					<button type="button" id="searchJobs">Search</button>
+				</div>
+
+				<p id = "loading"><img alt= "loading gif" src= "ajax-loader.gif" id = "spinner" width = "50" height = "50"></p>
+				<p id = "error"></p>
+
+			</div>
+		</div>
+		<div class = "responseContent">
+			<div id="dynamicContent">
+			</div>
+		</div>
+		<div class = "responseContent">
+			<div id = "map-div"></div>
+			<div id = "jobContent"></div>
+		</div>
+		<p id = "searchAgain"><button>Search Again</button></p>
+
+
+		<script type="text/javascript" src="js/states.js"></script>
+		<script type="text/javascript" src="js/categories.js"></script>
+		<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA6RYGB6WBp3etiIGhfuFE6CBpjAo-hJW4">
+		</script>
+		<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+		<script src="//code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
+	</body>
+	</html>
